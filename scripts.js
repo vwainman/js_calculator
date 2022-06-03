@@ -30,7 +30,7 @@ function divide(dividend, ...divisors) {
     return quotient;
 }
 
-function operate(operator, x, y) {
+function operateOnPair(operator, x, y) {
     if (operator === 'add') {
         return add(x, y);
     } else if (operator === 'subtract') {
@@ -67,6 +67,10 @@ for (const unitButton of unitButtons) {
 }
 for (const operatorButton of operatorButtons) {
     operatorButton.addEventListener("click", appendDecimal);
+}
+
+for (const clearButton of clearButtons) {
+    clearButton.addEventListener("click", clearDisplay);
 }
 
 function appendDisplayUnit(e) {

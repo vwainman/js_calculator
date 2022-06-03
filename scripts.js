@@ -47,26 +47,40 @@ function operate(operator, x, y) {
 const operators = ['+', '-', 'x', '÷']
 const units = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-const parenthesisButtons = document.querySelectorAll("#calculator>#interface>.parenthesis");
 const operatorButtons = document.querySelectorAll("#calculator>#interface>.operator");
 const unitButtons = document.querySelectorAll("#calculator>#interface>.unit");
-const clearButtons = document.querySelectorAll("#calculator>#interface>.clear");
-const decimalButton = document.querySelector("#calculator>#interface>.decimal");
-const equalsButton = document.querySelector("#calculator>#interface>.equals")
+const undoButton = document.querySelector("#calculator>#interface>#undo-last");
+const clearAllButton = document.querySelector("#calculator>#interface>#clear-all");
+const backspaceButton = document.querySelector("#calculator>#interface>#backspace");
+const decimalButton = document.querySelector("#calculator>#interface>#decimal");
+const equalsButton = document.querySelector("#calculator>#interface>#equation-result")
 const equationDisplay = document.querySelector("#calculator>#display>#equation");
 const resultDisplay = document.querySelector("#calculator>#display>#result");
 
 let result = 0;
+let lastOperatorPair = "";
+let secondPair = 0;
+let firstPair = 0;
 
 for (const unitButton of unitButtons) {
     unitButton.addEventListener("click", appendDisplayUnit);
 }
-for (const clearButton of clearButtons) {
-    clearButton.addEventListener("click", clearDisplay);
+for (const operatorButton of operatorButtons) {
+    operatorButton.addEventListener("click", appendDecimal);
 }
 
 function appendDisplayUnit(e) {
     equationDisplay.textContent += `${e.target.id}`;
+}
+
+function appendDecimal(e) {
+    if (units.includes(equationDisplay.textContent.slice(-1))) {
+        equationDisplay.textContent += ".";
+    } else {
+        const temp = resultDisplay.textContent;
+        resultDisplay.textContent = "ERROR - multiple decimals"
+        setTimeout(() => ())
+    }
 }
 
 function clearDisplay(e) {

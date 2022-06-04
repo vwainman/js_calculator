@@ -36,7 +36,11 @@ for (const operatorButton of operatorButtons) {
 }
 
 function updateUndoStack() {
-    if (undoStack.length === undoLimit) {
+    if (undoStack.slice(-1) == equationDisplay.textContent) {
+        // don't update if there is no change to push
+        return;
+    }
+    if (undoStack.length == undoLimit) {
         undoStack.shift();
     }
     undoStack.push(equationDisplay.textContent);
@@ -50,23 +54,30 @@ function displayError(errorInfo) {
 
 function appendDisplayUnit(e) {
     const entries = equationDisplay.textContent.split(" ");
-    const lastEntry = entries.slice(-1);
-    if (isOperator(lastEntry)) {
+    const lastEntry = entries.slice(-1).toString();
+    if (lastEntry != "" && isOperator(lastEntry)) {
         if (isNewSignNumber) {
             isNewSignNumber = false;
         } else {
             equationDisplay.textContent += " ";
         }
     }
+    if (lastEntry.charAt(lastEntry.length - 1) == "=") {
+        equationDisplay.textContent = "";
+    }
     equationDisplay.textContent += `${e.target.id}`;
     updateUndoStack();
 }
 
 function appendDecimalPoint() {
-    const lastEntry = equationDisplay.textContent.split(" ").slice(-1);
-    if (lastEntry.some((char) => !units.includes(char))) {
+    const lastEntry = equationDisplay.textContent.split(" ").slice(-1).toString();
+    const lastChar = lastEntry.slice(-1);
+    if (resultDisplay.textContent != "" && lastChar == "=" && !hasDecimalPoint(resultDisplay.textContent)) {
+        equationDisplay.textContent = resultDisplay.textContent + "."
+        resultDisplay.textContent = ""
+    }
+    else if (!isNumber(lastEntry) || hasDecimalPoint(lastEntry) || lastEntry == "") {
         displayError("ERROR - impossible decimal point");
-        return;
     } else {
         equationDisplay.textContent += ".";
         updateUndoStack();
@@ -74,12 +85,16 @@ function appendDecimalPoint() {
 }
 
 function appendOperator(e) {
-    const lastEntry = equationDisplay.textContent.split(" ").slice(-1);
+    const lastEntry = equationDisplay.textContent.split(" ").slice(-1).toString();
     const lastChar = lastEntry.slice(-1);
-    if (lastChar == "." || isOperator(lastEntry) || lastChar == "") {
+    if (lastChar == "." || lastChar == "") {
         displayError("ERROR - impossible operator placement");
         return;
-    } else if (lastChar == "=") {
+    } else if (isOperator(lastEntry)) {
+        const upToLastEntry = equationDisplay.textContent.split(" ").slice(0, -1);
+        equationDisplay.textContent = upToLastEntry.join(" ") + " " + e.target.id
+    }
+    else if (lastChar == "=") {
         equationDisplay.textContent = resultDisplay.textContent + " " + e.target.id;
     } else {
         equationDisplay.textContent = equationDisplay.textContent + " " + e.target.id;
@@ -116,29 +131,26 @@ function undoLast() {
 
 function displayEquationResult() {
     let equationPieces = equationDisplay.textContent.split(" ");
-    const lastEntry = equationPieces.slice(-1);
-    const lastChar = lastEntry.slice(-1);
+    equationPieces = equationPieces.filter((piece) => (piece != ""));
+    const lastEntry = equationPieces.slice(-1).toString();
+    const lastChar = lastEntry.charAt(lastEntry.length - 1);
     if (lastChar == "=" || lastEntry == "") {
         if (resultDisplay.textContent != "") {
             equationDisplay.textContent = resultDisplay.textContent;
             resultDisplay.textContent = "";
         }
-        return
-    }
-    if (lastChar == "." ||
-        lastEntry.some((char) => operators.includes(char))) {
+    } else if (lastChar == "." || isOperator(lastEntry)) {
         displayError("ERROR - equation incomplete");
-        return
+    } else {
+        equationDisplay.textContent += " ="
+        result = float_int(equationPieces.shift());
+        while (equationPieces.length >= 2) {
+            let operator = equationPieces.shift();
+            let numPair = float_int(equationPieces.shift());
+            result = operateOnPair(operator, result, numPair);
+        }
+        resultDisplay.textContent = result.toString();
     }
-
-    equationDisplay.textContent += " ="
-    result = float_int(equationPieces.shift());
-    while (equationPieces.length >= 2) {
-        let operator = equationPieces.shift();
-        let numPair = float_int(equationPieces.shift());
-        result = operateOnPair(operator, result, numPair);
-    }
-    resultDisplay.textContent = result.toString();
 
 }
 
@@ -192,11 +204,11 @@ function hasDecimalPoint(string) {
 }
 
 function isOperator(string) {
-    return (string.length == 1) && (operators.includes(string[0]));
+    return (string.length == 1) && (operators.includes(string.charAt(0)));
 }
 
 function isNumber(string) {
-    return !isOperator(string) || string[0] != "=";
+    return !isOperator(string) && !string.includes("=");
 }
 
 function add(x, ...args) {

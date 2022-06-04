@@ -67,7 +67,7 @@ equalsButton.onclick = displayEquationResult;
 signButton.onclick = assignSign;
 
 let result = 0;
-const undoStack = [];
+const undoStack = [""];
 const undoLimit = 50;
 let isNewSignNumber = false;
 
@@ -109,7 +109,8 @@ function appendDisplayUnit(e) {
 function appendDecimalPoint() {
     const lastEntry = equationDisplay.textContent.split(" ").slice(-1);
     if (lastEntry.some((char) => !units.includes(char))) {
-        displayError("ERROR - impossible decimal point")
+        displayError("ERROR - impossible decimal point");
+        return;
     } else {
         equationDisplay.textContent += ".";
         updateUndoStack();
@@ -119,13 +120,15 @@ function appendDecimalPoint() {
 function appendOperator(e) {
     const lastEntry = equationDisplay.textContent.split(" ").slice(-1);
     const lastChar = lastEntry.slice(-1);
-    if (lastChar == "." || isOperator(lastEntry)) {
+    if (lastChar == "." || isOperator(lastEntry) || lastChar == "") {
         displayError("ERROR - impossible operator placement");
+        return;
     } else if (lastChar == "=") {
         equationDisplay.textContent = resultDisplay.textContent + " " + e.target.id;
     } else {
         equationDisplay.textContent = equationDisplay.textContent + " " + e.target.id;
     }
+    updateUndoStack();
 }
 
 function clearAll() {
@@ -137,7 +140,9 @@ function clearAll() {
 function backspaceEquation() {
     resultDisplay.textContent = "";
     if (equationDisplay.textContent.length != 0) {
-        if (equationDisplay.textContent.slice(-1) == " ") {
+        const len = equationDisplay.textContent.length;
+        if (equationDisplay.textContent.charAt(len - 1) == " "
+            || equationDisplay.textContent.charAt(len - 2) == " ") {
             equationDisplay.textContent = equationDisplay.textContent.slice(0, -2);
         } else {
             equationDisplay.textContent = equationDisplay.textContent.slice(0, -1);
@@ -148,7 +153,7 @@ function backspaceEquation() {
 
 function undoLast() {
     resultDisplay.textContent = "";
-    if (undoStack.length > 1) {
+    if (undoStack.length >= 1) {
         equationDisplay.textContent = undoStack.pop();
     }
 }
@@ -157,6 +162,13 @@ function displayEquationResult() {
     let equationPieces = equationDisplay.textContent.split(" ");
     const lastEntry = equationPieces.slice(-1);
     const lastChar = lastEntry.slice(-1);
+    if (lastChar == "=" || lastEntry == "") {
+        if (resultDisplay.textContent != "") {
+            equationDisplay.textContent = resultDisplay.textContent;
+            resultDisplay.textContent = "";
+        }
+        return
+    }
     if (lastChar == "." ||
         lastEntry.some((char) => operators.includes(char))) {
         displayError("ERROR - equation incomplete");
@@ -209,6 +221,7 @@ function assignSign() {
             equationDisplay.textContent = upToLastEntry.join(" ") + " " + "-" + lastEntry;
         }
     }
+    updateUndoStack();
 }
 
 function float_int(string) {

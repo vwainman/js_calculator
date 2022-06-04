@@ -1,6 +1,6 @@
 function add(x, ...args) {
     let sum = x;
-    for (num in args) {
+    for (const num of args) {
         sum += num;
     }
     return sum;
@@ -8,7 +8,7 @@ function add(x, ...args) {
 
 function subtract(x, ...args) {
     let difference = x;
-    for (num in args) {
+    for (const num of args) {
         difference -= args;
     }
     return difference;
@@ -16,7 +16,7 @@ function subtract(x, ...args) {
 
 function multiply(x, ...args) {
     let product = x;
-    for (num in args) {
+    for (const num of args) {
         product *= args;
     }
     return product;
@@ -24,73 +24,208 @@ function multiply(x, ...args) {
 
 function divide(dividend, ...divisors) {
     let quotient = dividend;
-    for (divisor in divisors) {
+    for (const divisor of divisors) {
         quotient /= divisor;
     }
     return quotient;
 }
 
 function operateOnPair(operator, x, y) {
-    if (operator === 'add') {
+    if (operator === '+') {
         return add(x, y);
-    } else if (operator === 'subtract') {
+    } else if (operator === '-') {
         return subtract(x, y);
-    } else if (operator === 'multiply') {
+    } else if (operator === 'x') {
         return multiply(x, y);
-    } else if (operator === 'divide') {
+    } else if (operator === '÷') {
         return divide(x, y);
     } else {
         throw `Incorrect operator ${operator}`;
     }
 }
 
-const operators = ['+', '-', 'x', '÷']
-const units = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+const operators = ['+', '-', 'x', '÷'];
+const units = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+const ERROR_DISPLAY_TIME = 2000;
 
 const operatorButtons = document.querySelectorAll("#calculator>#interface>.operator");
 const unitButtons = document.querySelectorAll("#calculator>#interface>.unit");
-const undoButton = document.querySelector("#calculator>#interface>#undo-last");
 const clearAllButton = document.querySelector("#calculator>#interface>#clear-all");
 const backspaceButton = document.querySelector("#calculator>#interface>#backspace");
 const decimalButton = document.querySelector("#calculator>#interface>#decimal");
-const equalsButton = document.querySelector("#calculator>#interface>#equation-result")
+const undoButton = document.querySelector("#calculator>#interface>#undo-last");
+const equalsButton = document.querySelector("#calculator>#interface>#equation-result");
+const signButton = document.querySelector("#calculator>#interface>#sign")
 const equationDisplay = document.querySelector("#calculator>#display>#equation");
 const resultDisplay = document.querySelector("#calculator>#display>#result");
 
+clearAllButton.onclick = clearAll;
+backspaceButton.onclick = backspaceEquation;
+decimalButton.onclick = appendDecimalPoint;
+undoButton.onclick = undoLast;
+equalsButton.onclick = displayEquationResult;
+signButton.onclick = assignSign;
+
 let result = 0;
-let lastOperatorPair = "";
-let secondPair = 0;
-let firstPair = 0;
+const undoStack = [];
+const undoLimit = 50;
+let isNewSignNumber = false;
 
 for (const unitButton of unitButtons) {
     unitButton.addEventListener("click", appendDisplayUnit);
 }
+
 for (const operatorButton of operatorButtons) {
-    operatorButton.addEventListener("click", appendDecimal);
+    operatorButton.addEventListener("click", appendOperator);
 }
 
-for (const clearButton of clearButtons) {
-    clearButton.addEventListener("click", clearDisplay);
+function updateUndoStack() {
+    if (undoStack.length === undoLimit) {
+        undoStack.shift();
+    }
+    undoStack.push(equationDisplay.textContent);
+}
+
+function displayError(errorInfo) {
+    const temp = resultDisplay.textContent;
+    resultDisplay.textContent = errorInfo
+    setTimeout(() => (resultDisplay.textContent = temp), ERROR_DISPLAY_TIME);
 }
 
 function appendDisplayUnit(e) {
+    const entries = equationDisplay.textContent.split(" ");
+    const lastEntry = entries.slice(-1);
+    if (isOperator(lastEntry)) {
+        if (isNewSignNumber) {
+            isNewSignNumber = false;
+        } else {
+            equationDisplay.textContent += " ";
+        }
+    }
     equationDisplay.textContent += `${e.target.id}`;
+    updateUndoStack();
 }
 
-function appendDecimal(e) {
-    if (units.includes(equationDisplay.textContent.slice(-1))) {
-        equationDisplay.textContent += ".";
+function appendDecimalPoint() {
+    const lastEntry = equationDisplay.textContent.split(" ").slice(-1);
+    if (lastEntry.some((char) => !units.includes(char))) {
+        displayError("ERROR - impossible decimal point")
     } else {
-        const temp = resultDisplay.textContent;
-        resultDisplay.textContent = "ERROR - multiple decimals"
-        setTimeout(() => ())
+        equationDisplay.textContent += ".";
+        updateUndoStack();
     }
 }
 
-function clearDisplay(e) {
-    if (e.target.id === 'AC') {
-        equationDisplay.textContent = "";
-    } else if (e.target.id === 'C') {
-        equationDisplay.textContent = equationDisplay.textContent.slice(0, -1);
+function appendOperator(e) {
+    const lastEntry = equationDisplay.textContent.split(" ").slice(-1);
+    const lastChar = lastEntry.slice(-1);
+    if (lastChar == "." || isOperator(lastEntry)) {
+        displayError("ERROR - impossible operator placement");
+    } else if (lastChar == "=") {
+        equationDisplay.textContent = resultDisplay.textContent + " " + e.target.id;
+    } else {
+        equationDisplay.textContent = equationDisplay.textContent + " " + e.target.id;
     }
+}
+
+function clearAll() {
+    equationDisplay.textContent = "";
+    resultDisplay.textContent = "";
+    updateUndoStack();
+}
+
+function backspaceEquation() {
+    resultDisplay.textContent = "";
+    if (equationDisplay.textContent.length != 0) {
+        if (equationDisplay.textContent.slice(-1) == " ") {
+            equationDisplay.textContent = equationDisplay.textContent.slice(0, -2);
+        } else {
+            equationDisplay.textContent = equationDisplay.textContent.slice(0, -1);
+        }
+        updateUndoStack();
+    }
+}
+
+function undoLast() {
+    resultDisplay.textContent = "";
+    if (undoStack.length > 1) {
+        equationDisplay.textContent = undoStack.pop();
+    }
+}
+
+function displayEquationResult() {
+    let equationPieces = equationDisplay.textContent.split(" ");
+    const lastEntry = equationPieces.slice(-1);
+    const lastChar = lastEntry.slice(-1);
+    if (lastChar == "." ||
+        lastEntry.some((char) => operators.includes(char))) {
+        displayError("ERROR - equation incomplete");
+        return
+    }
+
+    equationDisplay.textContent += " ="
+    result = float_int(equationPieces.shift());
+    while (equationPieces.length >= 2) {
+        let operator = equationPieces.shift();
+        let numPair = float_int(equationPieces.shift());
+        result = operateOnPair(operator, result, numPair);
+    }
+    resultDisplay.textContent = result.toString();
+
+}
+
+function assignSign() {
+    let lastEntry = equationDisplay.textContent.split(" ").slice(-1).toString();
+    const lastChar = lastEntry.slice(-1);
+
+    if (lastChar == "=") {
+        // sign the last result for the next equation
+        if (resultDisplay.textContent.charAt(0) == "-") {
+            // remove -
+            equationDisplay.textContent = resultDisplay.textContent.slice(1);
+        } else {
+            // add -
+            equationDisplay.textContent = "-" + resultDisplay.textContent;
+        }
+        resultDisplay.textContent = "";
+    } else if (isNewSignNumber) {
+        isNewSignNumber = false;
+        equationDisplay.textContent = equationDisplay.textContent.slice(0, -1);
+    } else if (isOperator(lastEntry)) {
+        // absence of a number implies that we can make a new number
+        equationDisplay.textContent += " -";
+        isNewSignNumber = true;
+    } else if (lastChar == "") {
+        equationDisplay.textContent += "-";
+        isNewSignNumber = true;
+    } else if (isNumber(lastEntry)) {
+        // existence of a number implies that we need to change the last number's sign
+        const upToLastEntry = equationDisplay.textContent.split(" ").slice(0, -1);
+        if (lastEntry.charAt(0) == "-") {
+            // remove -
+            equationDisplay.textContent = upToLastEntry.join(" ") + " " + lastEntry.slice(1);
+        } else {
+            // add -
+            equationDisplay.textContent = upToLastEntry.join(" ") + " " + "-" + lastEntry;
+        }
+    }
+}
+
+function float_int(string) {
+    if (hasDecimalPoint(string)) {
+        return parseFloat(string);
+    }
+    return parseInt(string);
+}
+
+function hasDecimalPoint(string) {
+    return string.includes(".");
+}
+
+function isOperator(string) {
+    return (string.length == 1) && (operators.includes(string[0]));
+}
+
+function isNumber(string) {
+    return !isOperator(string) || string[0] != "=";
 }

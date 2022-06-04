@@ -1,48 +1,4 @@
-function add(x, ...args) {
-    let sum = x;
-    for (const num of args) {
-        sum += num;
-    }
-    return sum;
-}
-
-function subtract(x, ...args) {
-    let difference = x;
-    for (const num of args) {
-        difference -= args;
-    }
-    return difference;
-}
-
-function multiply(x, ...args) {
-    let product = x;
-    for (const num of args) {
-        product *= args;
-    }
-    return product;
-}
-
-function divide(dividend, ...divisors) {
-    let quotient = dividend;
-    for (const divisor of divisors) {
-        quotient /= divisor;
-    }
-    return quotient;
-}
-
-function operateOnPair(operator, x, y) {
-    if (operator === '+') {
-        return add(x, y);
-    } else if (operator === '-') {
-        return subtract(x, y);
-    } else if (operator === 'x') {
-        return multiply(x, y);
-    } else if (operator === '÷') {
-        return divide(x, y);
-    } else {
-        throw `Incorrect operator ${operator}`;
-    }
-}
+//TODO: PEDMAS, REFACTOR
 
 const operators = ['+', '-', 'x', '÷'];
 const units = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
@@ -241,4 +197,50 @@ function isOperator(string) {
 
 function isNumber(string) {
     return !isOperator(string) || string[0] != "=";
+}
+
+function add(x, ...args) {
+    let sum = x;
+    for (const num of args) {
+        sum += num;
+    }
+    return sum;
+}
+
+function subtract(x, ...args) {
+    let difference = x;
+    for (const num of args) {
+        difference -= args;
+    }
+    return difference;
+}
+
+function multiply(x, ...args) {
+    let product = x;
+    for (const num of args) {
+        product *= args;
+    }
+    return product;
+}
+
+function divide(dividend, ...divisors) {
+    let quotient = dividend;
+    for (const divisor of divisors) {
+        quotient /= divisor;
+    }
+    return quotient;
+}
+
+function operateOnPair(operator, x, y) {
+    if (operator === '+') {
+        return add(x, y);
+    } else if (operator === '-') {
+        return subtract(x, y);
+    } else if (operator === 'x') {
+        return multiply(x, y);
+    } else if (operator === '÷') {
+        return divide(x, y);
+    } else {
+        throw `Incorrect operator ${operator}`;
+    }
 }

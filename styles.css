@@ -3,6 +3,12 @@
     --calculator: #d4d6d8;
     --display: #e6eded;
     --btn: #3e4044;
+    --btn-equals: #f46536;
+    --btn-equals-hover: #e38c6f;
+    --btn-operator: #2562ac;
+    --btn-operator-hover: #3a72b7b5;
+    --btn-other: #da0000;
+    --btn-other-hover: #f15858;
     --btn-hover: #3e4044cb;
     --btn-active: #3e4044e7;
     --font: #dbdce2;
@@ -71,7 +77,9 @@ button {
     box-shadow: 0 4px 2px -2px gray;
 }
 
-button:hover {
+.unit:hover,
+#decimal:hover,
+#sign:hover {
     background-color: var(--btn-hover);
 }
 
@@ -79,6 +87,30 @@ button:active {
     background-color: var(--btn-active);
     box-shadow: 7px 6px 28px 1px rgba(0, 0, 0, 0.24);
     transform: translateY(4px);
+}
+
+#equation-result {
+    background-color: var(--btn-equals);
+}
+
+#equation-result:hover {
+    background-color: var(--btn-equals-hover);
+}
+
+.operator {
+    background-color: var(--btn-operator);
+}
+
+.operator:hover {
+    background-color: var(--btn-operator-hover);
+}
+
+.other {
+    background-color: var(--btn-other);
+}
+
+.other:hover {
+    background-color: var(--btn-other-hover);
 }
 
 #backspace,

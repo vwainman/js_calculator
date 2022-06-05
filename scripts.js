@@ -3,10 +3,11 @@
 const operators = ['+', '-', 'x', '÷'];
 const units = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const ERROR_DISPLAY_TIME = 2000;
+const N_DECIMALS = 5;
 
 const operatorButtons = document.querySelectorAll("#calculator>#interface>.operator");
 const unitButtons = document.querySelectorAll("#calculator>#interface>.unit");
-const clearAllButton = document.querySelector("#calculator>#interface>#clear-all");
+const clearAllDisplaysButton = document.querySelector("#calculator>#interface>#clear-all");
 const backspaceButton = document.querySelector("#calculator>#interface>#backspace");
 const decimalButton = document.querySelector("#calculator>#interface>#decimal");
 const undoButton = document.querySelector("#calculator>#interface>#undo-last");
@@ -15,24 +16,25 @@ const signButton = document.querySelector("#calculator>#interface>#sign")
 const equationDisplay = document.querySelector("#calculator>#display>#equation");
 const resultDisplay = document.querySelector("#calculator>#display>#result");
 
-clearAllButton.onclick = clearAll;
-backspaceButton.onclick = backspaceEquation;
-decimalButton.onclick = appendDecimalPoint;
-undoButton.onclick = undoLast;
+clearAllDisplaysButton.onclick = clearAllDisplays;
+backspaceButton.onclick = backspaceDisplayEquation;
+decimalButton.onclick = appendDisplayDecimalPoint;
+undoButton.onclick = undoLastEquationDisplay;
 equalsButton.onclick = displayEquationResult;
 signButton.onclick = assignSign;
+window.addEventListener('keydown', handleKeyboardInputs)
 
 let result = 0;
-const undoStack = [""];
+let undoStack = [""];
 const undoLimit = 50;
 let isNewSignNumber = false;
 
-for (const unitButton of unitButtons) {
-    unitButton.addEventListener("click", appendDisplayUnit);
-}
+unitButtons.forEach((unitButton) =>
+    unitButton.addEventListener("click", () => appendDisplayUnit(unitButton.textContent))
+)
 
 for (const operatorButton of operatorButtons) {
-    operatorButton.addEventListener("click", appendOperator);
+    operatorButton.addEventListener("click", () => appendDisplayOperator(operatorButton.textContent));
 }
 
 function updateUndoStack() {
@@ -52,7 +54,8 @@ function displayError(errorInfo) {
     setTimeout(() => (resultDisplay.textContent = temp), ERROR_DISPLAY_TIME);
 }
 
-function appendDisplayUnit(e) {
+function appendDisplayUnit(unitStr) {
+    resultDisplay.textContent = "";
     const entries = equationDisplay.textContent.split(" ");
     const lastEntry = entries.slice(-1).toString();
     if (lastEntry != "" && isOperator(lastEntry)) {
@@ -65,11 +68,11 @@ function appendDisplayUnit(e) {
     if (lastEntry.charAt(lastEntry.length - 1) == "=") {
         equationDisplay.textContent = "";
     }
-    equationDisplay.textContent += `${e.target.id}`;
+    equationDisplay.textContent += unitStr;
     updateUndoStack();
 }
 
-function appendDecimalPoint() {
+function appendDisplayDecimalPoint() {
     const lastEntry = equationDisplay.textContent.split(" ").slice(-1).toString();
     const lastChar = lastEntry.slice(-1);
     if (resultDisplay.textContent != "" && lastChar == "=" && !hasDecimalPoint(resultDisplay.textContent)) {
@@ -84,7 +87,7 @@ function appendDecimalPoint() {
     }
 }
 
-function appendOperator(e) {
+function appendDisplayOperator(operatorStr) {
     const lastEntry = equationDisplay.textContent.split(" ").slice(-1).toString();
     const lastChar = lastEntry.slice(-1);
     if (lastChar == "." || lastChar == "") {
@@ -92,23 +95,23 @@ function appendOperator(e) {
         return;
     } else if (isOperator(lastEntry)) {
         const upToLastEntry = equationDisplay.textContent.split(" ").slice(0, -1);
-        equationDisplay.textContent = upToLastEntry.join(" ") + " " + e.target.id
+        equationDisplay.textContent = upToLastEntry.join(" ") + " " + operatorStr;
     }
     else if (lastChar == "=") {
-        equationDisplay.textContent = resultDisplay.textContent + " " + e.target.id;
+        equationDisplay.textContent = resultDisplay.textContent + " " + operatorStr;
     } else {
-        equationDisplay.textContent = equationDisplay.textContent + " " + e.target.id;
+        equationDisplay.textContent = equationDisplay.textContent + " " + operatorStr;
     }
     updateUndoStack();
 }
 
-function clearAll() {
+function clearAllDisplays() {
     equationDisplay.textContent = "";
     resultDisplay.textContent = "";
     updateUndoStack();
 }
 
-function backspaceEquation() {
+function backspaceDisplayEquation() {
     resultDisplay.textContent = "";
     if (equationDisplay.textContent.length != 0) {
         const len = equationDisplay.textContent.length;
@@ -122,7 +125,7 @@ function backspaceEquation() {
     }
 }
 
-function undoLast() {
+function undoLastEquationDisplay() {
     resultDisplay.textContent = "";
     if (undoStack.length >= 1) {
         equationDisplay.textContent = undoStack.pop();
@@ -148,6 +151,12 @@ function displayEquationResult() {
             let operator = equationPieces.shift();
             let numPair = float_int(equationPieces.shift());
             result = operateOnPair(operator, result, numPair);
+            if (result == "") {
+                return;
+            }
+        }
+        if (!Number.isInteger(result)) {
+            result = parseFloat(result.toFixed(N_DECIMALS));
         }
         resultDisplay.textContent = result.toString();
     }
@@ -254,5 +263,41 @@ function operateOnPair(operator, x, y) {
         return divide(x, y);
     } else {
         throw `Incorrect operator ${operator}`;
+    }
+}
+
+const keyFunctions = {
+    '.': appendDisplayDecimalPoint,
+    'Enter': displayEquationResult,
+    '=': displayEquationResult,
+    'Backspace': backspaceDisplayEquation,
+    'Escape': clearAllDisplays,
+    '+': appendDisplayOperator,
+    '-': appendDisplayOperator,
+    '÷': appendDisplayOperator,
+    'x': appendDisplayOperator,
+    'ArrowLeft': undoLastEquationDisplay,
+    'ArrowDown': assignSign,
+    'ArrowUp': assignSign,
+    'ArrowRight': assignSign,
+}
+
+const keyOperatorConversion = {
+    '+': '+',
+    '-': '-',
+    '/': '÷',
+    '*': 'x',
+    'x': 'x',
+}
+
+function handleKeyboardInputs(e) {
+    let key = e.key;
+    if (key >= 0 && key <= 9) {
+        appendDisplayUnit(key.toString());
+    } else if (['+', '-', '/', '*', 'x'].includes(key)) {
+        key = keyOperatorConversion[key];
+        keyFunctions[key](key);
+    } else if (key in keyFunctions) {
+        keyFunctions[key]();
     }
 }
